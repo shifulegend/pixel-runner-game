@@ -6,8 +6,9 @@
 <style>
   html,body{margin:0;padding:0;background:#0b0f2e;overflow:hidden;height:100%;font-family:'Courier New',monospace;}
   #gameCanvas{display:block;background:linear-gradient(#8ed1ff,#c9ecff);touch-action:none;}
-  #hud{position:absolute;top:10px;right:16px;color:#fff;font-size:28px;font-weight:bold;text-shadow:2px 2px 0 #000;letter-spacing:2px;}
-  #speedTag{position:absolute;top:44px;right:16px;color:#ffe27a;font-size:14px;text-shadow:1px 1px 0 #000;}
+  #hud{position:absolute;top:10px;right:16px;color:#000;font-size:28px;font-weight:bold;text-shadow:1px 1px 0 #fff;letter-spacing:2px;}
+  #speedTag{position:absolute;top:64px;right:16px;color:#000;font-size:14px;text-shadow:1px 1px 0 #fff;}
+  #highScoreTag{position:absolute;top:44px;right:16px;color:#000;font-size:16px;font-weight:bold;text-shadow:1px 1px 0 #fff;}
   #startScreen,#gameOverScreen{position:absolute;top:0;left:0;width:100%;height:100%;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     background:rgba(0,0,0,0.55);color:#fff;text-align:center;font-family:'Courier New',monospace;}
@@ -21,6 +22,7 @@
 <body>
 <canvas id="gameCanvas"></canvas>
 <div id="hud">00000</div>
+<div id="highScoreTag">HIGH SCORE: 00000</div>
 <div id="speedTag">SPEED x1.0</div>
 
 <div id="startScreen">
@@ -52,6 +54,7 @@ window.addEventListener('resize', resize);
 let gameState = 'start';
 let startTime = 0, elapsed = 0;
 let score = 0;
+let sessionHighScore = 0;
 let speedMult = 1;
 const BASE_SPEED = 6;
 let worldSpeed = BASE_SPEED;
@@ -128,6 +131,7 @@ function update(dt){
   worldSpeed = BASE_SPEED * speedMult;
 
   score += 0.6 * speedMult * dt;
+  if(score > sessionHighScore) sessionHighScore = score;
 
   groundScroll -= worldSpeed;
 
@@ -195,6 +199,7 @@ function update(dt){
       if(player.vy > 0 && (py2 - ey1) < e.h*0.6){
         e.alive = false;
         score += 100;
+        if(score > sessionHighScore) sessionHighScore = score;
         player.vy = -9;
       } else {
         endGame();
@@ -239,7 +244,7 @@ function update(dt){
 
 function endGame(){
   gameState = 'over';
-  document.getElementById('finalScore').textContent = 'Score: ' + String(Math.floor(score)).padStart(5,'0');
+  document.getElementById('finalScore').textContent = 'Score: ' + String(Math.floor(score)).padStart(5,'0') + '  |  High Score: ' + String(Math.floor(sessionHighScore)).padStart(5,'0');
   document.getElementById('gameOverScreen').style.display='flex';
 }
 
@@ -437,6 +442,7 @@ function drawBarrel(){
 function drawHUD(){
   document.getElementById('hud').textContent = String(Math.floor(score)).padStart(5,'0');
   document.getElementById('speedTag').textContent = 'SPEED x' + speedMult.toFixed(2);
+  document.getElementById('highScoreTag').textContent = 'HIGH SCORE: ' + String(Math.floor(sessionHighScore)).padStart(5,'0');
 }
 
 function loop(){
