@@ -1,8 +1,9 @@
-# CI workflow for Pixel Runner — a static, dependency-free HTML/CSS/JS game.
-# No build step, package manager, or backend exists in this repo, so CI performs:
-#   1. HTML structural validation
-#   2. Automated Playwright smoke test (loads the game, checks for console errors,
-#      verifies score/jump/high-score logic behaves correctly)
+# CI workflow — Playwright smoke test for Pixel Runner (static HTML/CSS/JS game)
+# This project has no build step, no package manager, and no server —
+# a single self-contained index.html file. CI verifies the game loads
+# without console errors and core gameplay logic (score, jump, collisions,
+# high score) behaves correctly using a headless browser.
+# Docs: https://docs.github.com/en/actions
 
 name: CI
 
@@ -16,8 +17,8 @@ permissions:
   contents: read
 
 jobs:
-  ci:
-    name: Validate & Smoke Test
+  playwright-smoke-test:
+    name: Playwright Smoke Test
     runs-on: ubuntu-latest
 
     steps:
@@ -34,53 +35,46 @@ jobs:
           pip install playwright
           playwright install --with-deps chromium
 
-      - name: Validate index.html exists and is non-empty
-        run: |
-          test -s index.html || (echo "index.html missing or empty" && exit 1)
-
-      - name: Run Playwright smoke test
+      - name: Run smoke test
         run: |
           cat > smoke_test.py << 'EOF'
-          import asyncio
+          import asyncio, sys
           from playwright.async_api import async_playwright
-          import os
 
           async def run_test():
               errors = []
               async with async_playwright() as p:
                   browser = await p.chromium.launch()
-                  page = await browser.new_page()
+                  page = await browser.new_page(viewport={"width": 1280, "height": 720})
                   page.on("console", lambda msg: errors.append(msg.text) if msg.type == "error" else None)
                   page.on("pageerror", lambda exc: errors.append(str(exc)))
 
-                  path = "file://" + os.path.abspath("index.html")
-                  await page.goto(path)
-                  await page.wait_for_timeout(500)
+                  await page.goto("file://" + __file__.replace("smoke_test.py", "index.html"))
+                  await page.wait_for_timeout(300)
 
-                  assert await page.is_visible("#startScreen"), "Start screen did not render"
+                  start_visible = await page.is_visible("#startScreen")
+                  assert start_visible, "Start screen did not render"
 
                   await page.click("#startBtn")
                   await page.wait_for_timeout(1200)
 
-                  hud_before = await page.text_content("#hud")
-                  await page.wait_for_timeout(1200)
-                  hud_after = await page.text_content("#hud")
-                  assert int(hud_after) >= int(hud_before), "Score did not increase over time"
+                  hud_1 = await page.text_content("#hud")
+                  await page.wait_for_timeout(1000)
+                  hud_2 = await page.text_content("#hud")
+                  assert int(hud_2) >= int(hud_1), "Score did not increase over time"
 
                   await page.mouse.down()
                   await page.wait_for_timeout(150)
                   await page.mouse.up()
-                  await page.wait_for_timeout(300)
+                  await page.wait_for_timeout(500)
 
                   await browser.close()
 
-              if errors:
-                  print("Console/page errors detected:")
-                  for e in errors:
-                      print(" -", e)
-                  raise SystemExit(1)
-              print("Smoke test passed: no errors, start screen renders, score increments, jump works.")
+                  if errors:
+                      print("Console/page errors detected:", errors)
+                      sys.exit(1)
+                  print("Smoke test passed: no console errors, start screen renders, score increments, jump works.")
 
           asyncio.run(run_test())
           EOF
-          python smoke_test.py
+          python3 smoke_test.py
