@@ -15,6 +15,14 @@
 
 ---
 
+### [2026-07-08 20:32 IST] — Rename project from Pixel Runner to Spike Sprint
+- **Context**: User requested a more distinctive name and tagline for the game; "Spike Sprint" was selected from suggested name lists.
+- **Decision**: Renamed the game everywhere — GitHub repo (`pixel-runner-game` → `spike-sprint`), page `<title>`, README, CITATION.cff, docs/ai/*, and all cross-tool AI instruction files (CLAUDE.md, GEMINI.md, copilot-instructions.md). Added tagline "A poorly coded pixel runner" and redesigned the start screen with dedicated branded title/tagline styling, removing verbose gameplay instructions (kept only the jump control hint).
+- **Rationale**: A distinctive name improves shareability; a cleaner start screen with just title/tagline/jump-hint reduces clutter and looks more polished.
+- **Alternatives Rejected**: Keeping instructions on the start screen (rejected — user explicitly asked to remove all instructions except jump control).
+- **Consequences**: GitHub automatically redirects the old repo URL (`pixel-runner-game`) to the new one (`spike-sprint`), but any external links/bookmarks should be updated to the new URL going forward.
+- **Reversible**: Yes.
+
 ### [2026-07-08 02:50 IST] — Replace generic golden-template CI stub with Playwright smoke test
 - **Context**: `.github/workflows/ci.yml` inherited from golden-template had every step as a TODO `echo` stub, causing all 21+ CI runs to fail since there is no npm/pip/go project here.
 - **Decision**: Replace the stub workflow with a real Playwright-based smoke test (start screen renders, no console errors, score increments, jump works).
