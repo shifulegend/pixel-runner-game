@@ -5,7 +5,7 @@
 cff-version: 1.2.0
 message: "If you use or reference this project, please cite it as below."
 type: software
-title: "pixel-runner-game"
+title: "spike-sprint"
 abstract: "A browser-based endless runner game built with vanilla JavaScript and HTML5 Canvas. Features a procedurally-drawn running character, jump mechanics, enemies, pits, bushes, and a chasing spiked barrel, with zero external assets."
 authors:
   - family-names: ""
@@ -14,6 +14,6 @@ authors:
     website: "https://github.com/shifulegend"
 version: "1.0.0"
 date-released: "2026-07-07"
-url: "https://github.com/shifulegend/pixel-runner-game"
-repository-code: "https://github.com/shifulegend/pixel-runner-game"
+url: "https://github.com/shifulegend/spike-sprint"
+repository-code: "https://github.com/shifulegend/spike-sprint"
 license: MIT
