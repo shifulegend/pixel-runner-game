@@ -3,7 +3,7 @@
 <!-- DYNAMIC FILE — updated automatically by AI agents every session as applicable -->
 
 ## Purpose
-A single-file, browser-based endless runner game ("Pixel Runner") for casual play. The main character auto-runs right, jumps over/on enemies, avoids pits, and must clear stationary pipes before a chasing spiked barrel catches up. Built with zero external art assets to eliminate IP/licensing risk.
+A single-file, browser-based endless runner game ("Spike Sprint") for casual play. The main character auto-runs right, jumps over/on enemies, avoids pits, and must clear stationary pipes before a chasing spiked barrel catches up. Built with zero external art assets to eliminate IP/licensing risk.
 
 ## Stack & Key Dependencies
 - Vanilla JavaScript (ES6+), no frameworks or build tools
