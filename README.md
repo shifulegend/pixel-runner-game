@@ -4,6 +4,10 @@
 
 A browser-based endless runner game built with vanilla JavaScript and HTML5 Canvas — no external dependencies or libraries. All visuals (character, enemies, barrel, bushes) are original artwork drawn procedurally in code.
 
+## Origin Story
+
+Built on a flight with zero wifi, a dying phone, and two in-flight movies I'd already seen twice. Spite is a great motivator — a few hours of turbulence later, this game existed. It runs 100% offline (naturally), so next time you're stuck somewhere with no signal, you can be productively bored too.
+
 ## Play It
 
 Open `index.html` directly in any modern browser (Chrome recommended), or enable GitHub Pages on this repo (Settings → Pages → Deploy from `main` branch) to play it live at a public URL.
