@@ -80,26 +80,55 @@
 
 <script>
 // ── Web Audio ────────────────────────────────────────────────────────────────
+//
+// RCA — Why Safari / iOS was silent:
+//
+// 1. iOS Safari has an internal "unlocked" flag per tab. Audio only works
+//    after at least one AudioContext.resume() has *resolved successfully*
+//    synchronously inside a direct user gesture.  Calling resume() alone is
+//    not enough — iOS ignores it if the flag was never flipped.
+//
+// 2. The dummy-unlock pattern is the established fix: create a throwaway
+//    AudioContext, call resume() + close() synchronously at the very top of
+//    the gesture handler.  That flips the flag for every future AudioContext
+//    in the same tab.
+//
+// 3. iOS re-suspends the context when the tab goes to background.
+//    A visibilitychange listener re-resumes it on return.
+//
+// 4. Hardware ringer switch: iOS mutes Web Audio entirely when silent/vibrate.
+//    That's user-side — no code fix.
+//
+const AC = window.AudioContext || window.webkitAudioContext;
 let audioCtx = null;
 let soundEnabled = true;
 
 function getAudioCtx(){
-  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  // Safari requires resume() to be called synchronously inside a user-gesture handler.
-  // We prime the context on START/RESTART clicks (see below), but also call resume()
-  // here as a safety net for browsers that allow it outside a gesture.
-  if(audioCtx.state === 'suspended') audioCtx.resume();
+  if(!audioCtx) audioCtx = new AC();
+  if(audioCtx.state !== 'running') audioCtx.resume();
   return audioCtx;
 }
 
-// Safari fix: create AND resume AudioContext synchronously inside a user gesture.
-// Call this from every button/key handler that starts the game.
+// Dummy-unlock: create a throwaway context and resume it synchronously.
+// iOS flips its internal "audio allowed" flag on first successful resume.
+// Must be the FIRST thing called in every user-gesture handler.
 function primeAudio(){
-  if(!audioCtx){
-    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if(audioCtx.state === 'suspended') audioCtx.resume();
+  // Dummy throwaway — flips iOS unlock flag
+  try {
+    const dummy = new AC();
+    dummy.resume().finally(() => dummy.close());
+  } catch(e){}
+  // Now resume (or create) the real context
+  if(!audioCtx) audioCtx = new AC();
+  audioCtx.resume();
 }
+
+// Re-resume when tab comes back from background (iOS re-suspends on hide)
+document.addEventListener('visibilitychange', () => {
+  if(document.visibilityState === 'visible' && audioCtx && audioCtx.state !== 'running'){
+    audioCtx.resume();
+  }
+});
 
 function playTone(opts){
   if(!soundEnabled) return;
