@@ -85,8 +85,20 @@ let soundEnabled = true;
 
 function getAudioCtx(){
   if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  // Safari requires resume() to be called synchronously inside a user-gesture handler.
+  // We prime the context on START/RESTART clicks (see below), but also call resume()
+  // here as a safety net for browsers that allow it outside a gesture.
   if(audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
+}
+
+// Safari fix: create AND resume AudioContext synchronously inside a user gesture.
+// Call this from every button/key handler that starts the game.
+function primeAudio(){
+  if(!audioCtx){
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if(audioCtx.state === 'suspended') audioCtx.resume();
 }
 
 function playTone(opts){
@@ -145,15 +157,49 @@ function sfxLand(){
 }
 
 function sfxSquash(){
-  playTone({type:'square', freqStart:440, freqEnd:180, duration:0.1, volume:0.22});
-  setTimeout(()=>playTone({type:'square', freqStart:320, freqEnd:120, duration:0.09, volume:0.18}), 80);
+  // Use AudioContext scheduling to avoid setTimeout breaking Safari gesture chain.
+  if(!soundEnabled) return;
+  try {
+    const ac = getAudioCtx();
+    [[440,180,0],[320,120,0.08]].forEach(([fs,fe,offset])=>{
+      const t = ac.currentTime + offset;
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain); gain.connect(ac.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(fs, t);
+      osc.frequency.linearRampToValueAtTime(fe, t + 0.1);
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.linearRampToValueAtTime(0.22, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.1);
+      osc.start(t); osc.stop(t + 0.12);
+    });
+  } catch(e){}
 }
 
 function sfxGameOver(){
-  const notes = [330, 262, 196, 147];
-  notes.forEach((f,i)=>{
-    setTimeout(()=>playTone({type:'square', freqStart:f, freqEnd:f*0.85, duration:0.18, volume:0.22}), i*130);
-  });
+  // Use AudioContext scheduling instead of setTimeout so Safari doesn't lose
+  // the gesture trust context between the note callbacks.
+  if(!soundEnabled) return;
+  try {
+    const ac = getAudioCtx();
+    const notes = [330, 262, 196, 147];
+    notes.forEach((f, i) => {
+      const t = ac.currentTime + i * 0.13;
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.connect(gain);
+      gain.connect(ac.destination);
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(f, t);
+      osc.frequency.linearRampToValueAtTime(f * 0.85, t + 0.18);
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.linearRampToValueAtTime(0.22, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      osc.start(t);
+      osc.stop(t + 0.20);
+    });
+  } catch(e){}
 }
 
 function sfxBarrelWarn(){
@@ -609,6 +655,7 @@ function loop(){
 
 function startJump(){
   if(gameState!=='playing') return;
+  primeAudio(); // ensure AudioContext is running on every gesture (Safari)
   if(player.onGround || player.stuck){
     sfxJump();
     jumpKeyDown = true;
@@ -642,11 +689,13 @@ canvas.addEventListener('pointerup', e=>{ endJump(); });
 canvas.addEventListener('pointercancel', e=>{ endJump(); });
 
 document.getElementById('startBtn').addEventListener('click', ()=>{
+  primeAudio();
   document.getElementById('startScreen').style.display='none';
   resetGame();
   gameState='playing';
 });
 document.getElementById('restartBtn').addEventListener('click', ()=>{
+  primeAudio();
   document.getElementById('gameOverScreen').style.display='none';
   resetGame();
   gameState='playing';
